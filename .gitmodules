@@ -1,0 +1,3 @@
+[submodule "xdeep"]
+	path = xdeep
+	url = https://github.com/datamllab/xdeep.git
