@@ -38,8 +38,12 @@ except:
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 epochs = 100
 
+
 def train(model, device, train_loader, optimizer, epoch):
     model.train()
+    train_loss = 0
+    correct = 0
+
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), torch.tensor(target).to(device) 
         optimizer.zero_grad()
@@ -47,10 +51,22 @@ def train(model, device, train_loader, optimizer, epoch):
         loss = F.cross_entropy(output, target)
         loss.backward()
         optimizer.step()
+
+        # Scale loss by batch size
+        train_loss += loss.item() * data.size(0)  
+        # get the index of the max log-probability
+        pred = output.max(1, keepdim=True)[1]  
+        # update correct prediction 
+        correct += pred.eq(target.view_as(pred)).sum().item()
+
         if(batch_idx+1)%100 == 0: #Print result every 100 batches
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
+            
+    train_loss /= len(train_loader.dataset)
+    train_accuracy = correct / len(train_loader.dataset)
+    return train_loss, train_accuracy
 
             
 def test(model, device, test_loader):
@@ -69,10 +85,44 @@ def test(model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
+    return (test_loss, correct / len(test_loader.dataset))
+
+def plot_loss(epochs, train_losses, test_losses):
+    plt.plot(range(epochs), train_losses, label='Train')
+    plt.plot(range(epochs), test_losses, label='Test')
+    plt.grid()
+    plt.title('Loss Curves')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig("Loss_Curves.png")
 
 
+def plot_accuracy(epochs, train_acc, test_acc):
+    plt.plot(range(epochs), train_acc, label='Train')
+    plt.plot(range(epochs), test_acc, label='Test')
+    plt.grid()
+    plt.title('Accuracy Curves')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.savefig("Accuracy_Curves.png")
+
+
+train_losses = []
+test_losses = []
+train_acc = []
+test_acc = []
 for epoch in range(1, epochs + 1):
     train_loss, train_accuracy = train(model, device, train_loader, optimizer, epoch)
     test_loss, test_accuracy = test(model, device, test_loader)
+    train_losses.append(train_loss)
+    test_losses.append(test_loss)
+    train_acc.append(train_accuracy)
+    test_acc.append(test_accuracy)
 
 torch.save(model, r'models/model.pt')
+plot_loss(epochs, train_losses, test_losses)
+plot_accuracy(epochs, train_acc, test_acc)

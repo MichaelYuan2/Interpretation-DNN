@@ -54,6 +54,7 @@ def create_dataset(df):
         data = data.loc['X1':]
         data = data.to_numpy()
         data = array_to_image(data)
+        data = rearrange_image(data)
         data = enlarge_image(data)
         data = torch.Tensor(data)
         data = data.unsqueeze(0)
@@ -78,6 +79,14 @@ def array_to_dataframe(array):
         for j in range(13):
             df.iloc[i, j] = "X{}/X{}".format(i+1, j+1)
     return df
+
+def rearrange_image(image):
+    pixels = np.load(r"pixels.npy") # load the order of ratios from MC simulation
+    image = image.reshape(-1)
+    new_image = np.zeros(image.size)
+    for i, pixel in enumerate(pixels):
+        new_image[i] = image[pixel]
+    return new_image.reshape(13, 13)
 
 def enlarge_image(image_array, new_size=(64, 64)):
     """
@@ -133,15 +142,15 @@ def enlarge_image_and_dataframe(image_array, dataframe, new_size=(64, 64)):
 
 def array_to_grayscale_image(array):
     """
-    Converts a 20x20 numpy array into a grayscale image, labeling each row and column.
+    Converts a 64x64 numpy array into a grayscale image, labeling each row and column.
     Args:
-    array (numpy.ndarray): A 20x20 numpy array.
+    array (numpy.ndarray): A 64x64 numpy array.
     
     Returns:
     matplotlib.figure.Figure: A matplotlib figure representing the grayscale image.
     """
     if array.shape != (64, 64):
-        raise ValueError("Input array must be 20x20 in size.")
+        raise ValueError("Input array must be 64x64 in size.")
 
     fig, ax = plt.subplots()
     # Displaying the image
@@ -150,11 +159,11 @@ def array_to_grayscale_image(array):
     fig.colorbar(cax)
 
     # Adding row labels
-    for i in range(20):
+    for i in range(64):
         ax.text(-1, i, str(i), va='center', ha='right', color='red')
 
     # Adding column labels
-    for i in range(20):
+    for i in range(64):
         ax.text(i, -1, str(i), va='bottom', ha='center', color='blue')
 
     return fig
