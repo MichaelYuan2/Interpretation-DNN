@@ -8,6 +8,7 @@ from tqdm import tqdm
 from PIL import Image
 import logging
 import matplotlib.pyplot as plt
+from imblearn.over_sampling import SMOTE
 
 label_class = {'failed':0, 'alive':1}
 
@@ -39,11 +40,21 @@ def preprocess_data(df):
         df = df.drop(df[(df.company_name == company_name) & (df.year < min_year)].index)
     return df
 
+def oversampling_data(df):
+    X, y = df.drop(columns=['company_name', 'year', 'status_label']), df['status_label']
+
+    # oversampling the minority with Nrm / Nm = 1
+    sm = SMOTE(random_state=42)
+    X_res, y_res = sm.fit_resample(X, y)
+    X_res['status_label'] = y_res
+    return X_res
+
 def load_data(TRAINPATH):
     df = pd.read_csv(TRAINPATH)
     df = preprocess_data(df)
     df = df.dropna()
     df['status_label'] = df['status_label'].map(label_class)
+    df = oversampling_data(df)
     return df
 
 def create_dataset(df):
