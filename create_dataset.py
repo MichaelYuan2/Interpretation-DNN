@@ -57,12 +57,42 @@ def load_data(TRAINPATH):
     df = oversampling_data(df)
     return df
 
+def ratios_dataframe(df):
+    # convert the dataframe to ratios
+    ratios_df = pd.DataFrame()
+    for column in df.columns:
+        df[column] = df[column].replace(0, 1e-6)
+    for i in range(18):
+        for j in range(i+1, 18):
+            column = "X{}/X{}".format(i+1, j+1)
+            ratios_df[column] = df["X{}".format(i+1)] / df["X{}".format(j+1)]
+            ratios_df[column] = (ratios_df[column] - ratios_df[column].mean()) / ratios_df[column].std() + 128
+    return ratios_df
+
 def create_dataset(df):
+    dataset = []
+    ratios_df = ratios_dataframe(df)
+    logging.info('Creating dataset...')
+    for index, data in tqdm(df.iterrows(), total=df.shape[0]):
+        status_label = data['status_label']
+        data = data.drop(columns=['status_label'])
+        data = data.to_numpy()
+        zeros_to_add = max(0, 169 - len(data))
+        data = np.pad(data, (0, zeros_to_add), mode='constant', constant_values=0).reshape(13, 13)
+        # data = rearrange_image(data)
+        data = enlarge_image(data)
+        data = torch.Tensor(data)
+        data = data.unsqueeze(0)
+        dataset.append((data, status_label))
+    
+    return CustomDataset(dataset)
+
+def create_dataset_old(df):
     dataset = []
     logging.info('Creating dataset...')
     for index, data in tqdm(df.iterrows(), total=df.shape[0]):
         status_label = data['status_label']
-        data = data.loc['X1':]
+        data = data.loc['X1':'X18']
         data = data.to_numpy()
         data = array_to_image(data)
         data = rearrange_image(data)
