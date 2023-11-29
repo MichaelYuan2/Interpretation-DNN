@@ -98,6 +98,7 @@ def plot_loss(epochs, train_losses, test_losses):
 
     plt.tight_layout()
     plt.savefig("Loss_Curves.png")
+    plt.clf()
 
 
 def plot_accuracy(epochs, train_acc, test_acc):
@@ -109,6 +110,7 @@ def plot_accuracy(epochs, train_acc, test_acc):
     plt.ylabel('Accuracy')
     plt.legend()
     plt.savefig("Accuracy_Curves.png")
+    plt.clf()
 
 
 train_losses = []
