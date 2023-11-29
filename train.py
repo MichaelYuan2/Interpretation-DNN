@@ -12,6 +12,7 @@ from PIL import Image
 import logging
 import torch.nn.functional as F
 from torchvision.models import resnet50
+import matplotlib.pyplot as plt
 
 # image data path
 
@@ -19,6 +20,7 @@ DATAPATH = r'american_bankruptcy.csv'
 
 logging.basicConfig(level=logging.INFO)
 data = load_data(DATAPATH)
+# print(data.head())
 dataset = create_dataset(data)
 train_data, test_data = train_test_split(dataset, test_size=0.2, random_state=42)
 train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
@@ -45,7 +47,7 @@ def train(model, device, train_loader, optimizer, epoch):
     correct = 0
 
     for batch_idx, (data, target) in enumerate(train_loader):
-        data, target = data.to(device), torch.tensor(target).to(device) 
+        data, target = data.to(device), torch.tensor(target).type(torch.LongTensor).to(device) 
         optimizer.zero_grad()
         output = model(data)
         loss = F.cross_entropy(output, target)
@@ -75,7 +77,7 @@ def test(model, device, test_loader):
     correct = 0
     with torch.no_grad():
         for data, target in test_loader:
-            data, target = data.to(device), torch.tensor(target).to(device)
+            data, target = data.to(device), torch.tensor(target).type(torch.LongTensor).to(device)
             output = model(data)
             test_loss += F.cross_entropy(output, target, reduction='sum').item() 
             pred = output.max(1, keepdim=True)[1] 
@@ -87,7 +89,7 @@ def test(model, device, test_loader):
         100. * correct / len(test_loader.dataset)))
     return (test_loss, correct / len(test_loader.dataset))
 
-def plot_loss(epochs, train_losses, test_losses):
+def plot_loss(epochs, train_losses, test_losses, fp = 'plot'):
     plt.plot(range(epochs), train_losses, label='Train')
     plt.plot(range(epochs), test_losses, label='Test')
     plt.grid()
@@ -98,10 +100,9 @@ def plot_loss(epochs, train_losses, test_losses):
 
     plt.tight_layout()
     plt.savefig("Loss_Curves.png")
-    plt.clf()
 
 
-def plot_accuracy(epochs, train_acc, test_acc):
+def plot_accuracy(epochs, train_acc, test_acc, fp = 'plot'):
     plt.plot(range(epochs), train_acc, label='Train')
     plt.plot(range(epochs), test_acc, label='Test')
     plt.grid()
@@ -110,7 +111,6 @@ def plot_accuracy(epochs, train_acc, test_acc):
     plt.ylabel('Accuracy')
     plt.legend()
     plt.savefig("Accuracy_Curves.png")
-    plt.clf()
 
 
 train_losses = []
@@ -125,6 +125,15 @@ for epoch in range(1, epochs + 1):
     train_acc.append(train_accuracy)
     test_acc.append(test_accuracy)
 
-torch.save(model, r'models/model.pt')
+try:
+    torch.save(model, r'models/model.pt')
+except:
+    os.mkdir(r"models")
+    torch.save(model, r'models/model.pt')
+
+try:
+    os.mkdir(r"plot")
+except:
+    pass
 plot_loss(epochs, train_losses, test_losses)
 plot_accuracy(epochs, train_acc, test_acc)
