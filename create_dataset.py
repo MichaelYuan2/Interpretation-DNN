@@ -32,6 +32,14 @@ class CustomDataset():
 def preprocess_data(df):
     index = []
     logging.info('Preprocessing data...')
+    # # Find the most recent three years for each company
+    # recent_years_dict = {}
+    # for company in df['company_name'].unique():
+    #     recent_years_dict[company] = df[df['company_name'] == company]['year'].nlargest(3).tolist()
+
+    # # Filter the DataFrame using boolean indexing
+    # df = pd.concat([df[(df['company_name'] == company) & df['year'].isin(recent_years_dict[company])] for company in recent_years_dict])
+
     for i in tqdm(range(1, 8972)):
         company_name = 'C_{}'.format(i)
         company_data = df[df.company_name == company_name]
@@ -66,7 +74,7 @@ def ratios_dataframe(df):
         for j in range(i+1, 18):
             column = "X{}/X{}".format(i+1, j+1)
             ratios_df[column] = df["X{}".format(i+1)] / df["X{}".format(j+1)]
-            ratios_df[column] = (ratios_df[column] - ratios_df[column].mean()) / ratios_df[column].std() * 100 + 128
+            ratios_df[column] = (ratios_df[column] - ratios_df[column].mean()) / (ratios_df[column].std()+1e-6) * 100 + 128
     ratios_df['status_label'] = df['status_label']
     return ratios_df
 
