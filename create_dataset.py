@@ -66,12 +66,13 @@ def ratios_dataframe(df):
         for j in range(i+1, 18):
             column = "X{}/X{}".format(i+1, j+1)
             ratios_df[column] = df["X{}".format(i+1)] / df["X{}".format(j+1)]
-            ratios_df[column] = (ratios_df[column] - ratios_df[column].mean()) / ratios_df[column].std() + 128
+            ratios_df[column] = (ratios_df[column] - ratios_df[column].mean()) / ratios_df[column].std() * 100 + 128
+    ratios_df['status_label'] = df['status_label']
     return ratios_df
 
 def create_dataset(df):
     dataset = []
-    ratios_df = ratios_dataframe(df)
+    df = ratios_dataframe(df)
     logging.info('Creating dataset...')
     for index, data in tqdm(df.iterrows(), total=df.shape[0]):
         status_label = data['status_label']
