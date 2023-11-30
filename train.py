@@ -152,10 +152,13 @@ for epoch in range(1, epochs + 1):
     test_acc.append(test_accuracy)
 
 try:
-    torch.save(model, r'models/model.pt')
-except:
     os.mkdir(r"models")
-    torch.save(model, r'models/model.pt')
+except:
+   pass
+
+# torch.save(model, r'models/model.pt')
+model_scripted = torch.jit.script(model) # Export to TorchScript
+model_scripted.save('models/model_scripted.pt') # Save
 
 try:
     os.mkdir(r"plot")
