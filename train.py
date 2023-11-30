@@ -66,7 +66,7 @@ epochs = 10
 
 
 def train(model, device, train_loader, optimizer, epoch):
-    # model.train()
+    model.train()
     train_loss = 0
     correct = 0
 
@@ -96,7 +96,7 @@ def train(model, device, train_loader, optimizer, epoch):
 
             
 def test(model, device, test_loader):
-    # model.eval()
+    model.eval()
     test_loss = 0
     correct = 0
     with torch.no_grad():
@@ -156,6 +156,7 @@ try:
 except:
    pass
 
+model = model.to('cpu')
 # torch.save(model, r'models/model.pt')
 model_scripted = torch.jit.script(model) # Export to TorchScript
 model_scripted.save('models/model_scripted.pt') # Save
