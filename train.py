@@ -11,7 +11,7 @@ from tqdm import tqdm
 from PIL import Image
 import logging
 import torch.nn.functional as F
-from torchvision.models import resnet50
+from torchvision.models import resnet18
 import matplotlib.pyplot as plt
 
 # image data path
@@ -28,21 +28,45 @@ test_loader = DataLoader(test_data, batch_size=64, shuffle=True)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-try:
-    model = torch.load(r'models/model.pth')
-except:
-    resnet50 = resnet50(pretrained=False)
-    num_features = resnet50.fc.in_features
-    resnet50.fc = nn.Linear(num_features, 2)
-    resnet50.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-    model = resnet50.to(device)
+# try:
+#     model = torch.load(r'models/model.pth')
+# except:
+#     resnet18 = resnet18(pretrained=False)
+#     num_features = resnet18.fc.in_features
+#     resnet18.fc = nn.Linear(num_features, 2)
+#     resnet18.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+#     model = resnet18.to(device)
 
+class SimpleCNN(nn.Module):
+    def __init__(self, input_channels=1, num_classes=2):
+        super(SimpleCNN, self).__init__()
+
+        # Convolutional layer 1
+        self.conv1 = nn.Conv2d(input_channels, 32, kernel_size=3, stride=1, padding=1)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        # Convolutional layer 2
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+
+        # Fully connected layer 1
+        self.fc1 = nn.Linear(64 * 16 * 16, 64)  # input image size is 64x64
+        self.fc2 = nn.Linear(64, num_classes)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 64 * 16 * 16)  # Flatten the output for the fully connected layer
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+
+model = SimpleCNN().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-epochs = 100
+epochs = 10
 
 
 def train(model, device, train_loader, optimizer, epoch):
-    model.train()
+    # model.train()
     train_loss = 0
     correct = 0
 
@@ -72,7 +96,7 @@ def train(model, device, train_loader, optimizer, epoch):
 
             
 def test(model, device, test_loader):
-    model.eval()
+    # model.eval()
     test_loss = 0
     correct = 0
     with torch.no_grad():
@@ -99,7 +123,8 @@ def plot_loss(epochs, train_losses, test_losses, fp = 'plot'):
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig("Loss_Curves.png")
+    plt.savefig(os.path.join(fp, "Loss_Curves.png"))
+    plt.clf()
 
 
 def plot_accuracy(epochs, train_acc, test_acc, fp = 'plot'):
@@ -110,7 +135,8 @@ def plot_accuracy(epochs, train_acc, test_acc, fp = 'plot'):
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig("Accuracy_Curves.png")
+    plt.savefig(os.path.join(fp, "Accuracy_Curves.png"))
+    plt.clf()
 
 
 train_losses = []
