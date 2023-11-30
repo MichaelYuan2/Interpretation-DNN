@@ -62,7 +62,7 @@ class SimpleCNN(nn.Module):
 
 model = SimpleCNN().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-epochs = 10
+epochs = 5
 
 
 def train(model, device, train_loader, optimizer, epoch):
@@ -157,9 +157,9 @@ except:
    pass
 
 model = model.to('cpu')
-# torch.save(model, r'models/model.pt')
-model_scripted = torch.jit.script(model) # Export to TorchScript
-model_scripted.save('models/model_scripted.pt') # Save
+torch.save(model, r'models/model.pt')
+# model_scripted = torch.jit.script(model) # Export to TorchScript
+# model_scripted.save('models/model_scripted.pt') # Save
 
 try:
     os.mkdir(r"plot")
