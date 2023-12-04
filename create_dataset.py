@@ -68,6 +68,7 @@ def load_data(TRAINPATH):
 def ratios_dataframe(df):
     # convert the dataframe to ratios
     ratios_df = pd.DataFrame()
+    ratios_df['status_label'] = df['status_label']
     for column in df.columns:
         df[column] = df[column].replace(0, 1e-6)
     for i in range(18):
@@ -75,7 +76,6 @@ def ratios_dataframe(df):
             column = "X{}/X{}".format(i+1, j+1)
             ratios_df[column] = df["X{}".format(i+1)] / df["X{}".format(j+1)]
             ratios_df[column] = (ratios_df[column] - ratios_df[column].mean()) / (ratios_df[column].std()+1e-6) * 100 + 128
-    ratios_df['status_label'] = df['status_label']
     return ratios_df
 
 def create_dataset(df):
