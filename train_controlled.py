@@ -29,8 +29,10 @@ for idx_path in IDXPATHS:
     idxes.append(np.load(idx_path))
 print(idxes[0])
 
-dataset = create_dataset_controlled(data, idxes)
-train_data, test_data = train_test_split(dataset, test_size=0.2, random_state=42)
+X, y = data.drop(columns=['status_label']), data['status_label']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+train_df, test_df = pd.concat([X_train, y_train], axis=1), pd.concat([X_test, y_test], axis=1)
+train_data, test_data = create_dataset_controlled(train_df, idxes, oversampling=True), create_dataset_controlled(test_df, idxes, oversampling=False)
 train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
 test_loader = DataLoader(test_data, batch_size=64, shuffle=True)
 

@@ -62,7 +62,6 @@ def load_data(TRAINPATH):
     df = preprocess_data(df)
     df = df.dropna()
     df['status_label'] = df['status_label'].map(label_class)
-    df = oversampling_data(df)
     return df
 
 def ratios_dataframe(df):
@@ -78,8 +77,10 @@ def ratios_dataframe(df):
             ratios_df[column] = (ratios_df[column] - ratios_df[column].mean()) / (ratios_df[column].std()+1e-6) * 100 + 128
     return ratios_df
 
-def create_dataset(df):
+def create_dataset(df, oversampling = False):
     dataset = []
+    if oversampling:
+        df = oversampling_data(df)
     df = ratios_dataframe(df)
     logging.info('Creating dataset...')
     for index, data in tqdm(df.iterrows(), total=df.shape[0]):
@@ -96,8 +97,11 @@ def create_dataset(df):
     
     return CustomDataset(dataset)
 
-def create_dataset_controlled(df, idxes):
+def create_dataset_controlled(df, idxes, oversampling = False):
     dataset = []
+    flag = True
+    if oversampling:
+        df = oversampling_data(df)
     df = ratios_dataframe(df)
     logging.info('Creating dataset...')
     for index, data in tqdm(df.iterrows(), total=df.shape[0]):
@@ -108,6 +112,9 @@ def create_dataset_controlled(df, idxes):
         data = np.pad(data, (0, zeros_to_add), mode='constant', constant_values=0).reshape(13, 13)
         idx = idxes[0] #if status_label == 0 else idxes[1]
         data[idx[:, 0], idx[:, 1]] = 0
+        if flag:
+            print(data)
+            flag = False
         # data = rearrange_image(data)
         data = enlarge_image(data)
         data = torch.Tensor(data)

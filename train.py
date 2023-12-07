@@ -20,9 +20,13 @@ DATAPATH = r'american_bankruptcy.csv'
 
 logging.basicConfig(level=logging.INFO)
 data = load_data(DATAPATH)
-# print(data.head())
-dataset = create_dataset(data)
-train_data, test_data = train_test_split(dataset, test_size=0.2, random_state=42)
+X, y = data.drop(columns=['status_label']), data['status_label']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+train_df, test_df = pd.concat([X_train, y_train], axis=1), pd.concat([X_test, y_test], axis=1)
+train_data, test_data = create_dataset(train_df, oversampling=True), create_dataset(test_df, oversampling=False)
+
+# dataset = create_dataset(data)
+# train_data, test_data = train_test_split(dataset, test_size=0.2, random_state=42)
 train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
 test_loader = DataLoader(test_data, batch_size=64, shuffle=True)
 
@@ -115,7 +119,7 @@ def plot_loss(epochs, train_losses, test_losses, fp = 'plot'):
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig(os.path.join(fp, "Loss_Curves.png"))
+    plt.savefig(os.path.join(fp, "Loss_Curves2.png"))
     plt.clf()
 
 
@@ -127,7 +131,7 @@ def plot_accuracy(epochs, train_acc, test_acc, fp = 'plot'):
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig(os.path.join(fp, "Accuracy_Curves.png"))
+    plt.savefig(os.path.join(fp, "Accuracy_Curves2.png"))
     plt.clf()
 
 
@@ -149,7 +153,7 @@ except:
    pass
 
 model = model.to('cpu')
-torch.save(model, r'models/model.pt')
+torch.save(model, r'models/model2.pt')
 # model_scripted = torch.jit.script(model) # Export to TorchScript
 # model_scripted.save('models/model_scripted.pt') # Save
 
