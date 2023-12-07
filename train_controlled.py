@@ -163,7 +163,7 @@ except:
    pass
 
 model = model.to('cpu')
-torch.save(model, r'models/model.pt')
+torch.save(model, r'models/model_controlled.pt')
 # model_scripted = torch.jit.script(model) # Export to TorchScript
 # model_scripted.save('models/model_scripted.pt') # Save
 
