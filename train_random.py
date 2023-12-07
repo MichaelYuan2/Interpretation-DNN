@@ -23,6 +23,7 @@ data = load_data(DATAPATH)
 
 # Randomly generate top 10 ratios's indexes, for class 0 and class 1
 idxes = [np.random.randint(0, 13, size=(10, 2)), np.random.randint(0, 13, size=(10, 2))]
+print(idxes[0])
 
 dataset = create_dataset_controlled(data, idxes)
 train_data, test_data = train_test_split(dataset, test_size=0.2, random_state=42)
@@ -31,14 +32,6 @@ test_loader = DataLoader(test_data, batch_size=64, shuffle=True)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-# try:
-#     model = torch.load(r'models/model.pth')
-# except:
-#     resnet18 = resnet18(pretrained=False)
-#     num_features = resnet18.fc.in_features
-#     resnet18.fc = nn.Linear(num_features, 2)
-#     resnet18.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-#     model = resnet18.to(device)
 
 class SimpleCNN(nn.Module):
     def __init__(self, input_channels=1, num_classes=2):

@@ -17,7 +17,8 @@ import matplotlib.pyplot as plt
 # image data path
 
 DATAPATH = r'american_bankruptcy.csv'
-IDXPATHS = [r'top_10_idx_class0.npy', r'top_10_idx_class1.npy']
+# IDXPATHS = [r'index/SHAP_label0_Top10.npy', r'index/SHAP_label1_Top10.npy']
+IDXPATHS = [r'index/GradCAM_label0_Top10.npy', r'index/GradCAM_label1_Top10.npy']
 
 logging.basicConfig(level=logging.INFO)
 data = load_data(DATAPATH)
@@ -26,6 +27,7 @@ data = load_data(DATAPATH)
 idxes = []
 for idx_path in IDXPATHS:
     idxes.append(np.load(idx_path))
+print(idxes[0])
 
 dataset = create_dataset_controlled(data, idxes)
 train_data, test_data = train_test_split(dataset, test_size=0.2, random_state=42)
@@ -33,15 +35,6 @@ train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
 test_loader = DataLoader(test_data, batch_size=64, shuffle=True)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-# try:
-#     model = torch.load(r'models/model.pth')
-# except:
-#     resnet18 = resnet18(pretrained=False)
-#     num_features = resnet18.fc.in_features
-#     resnet18.fc = nn.Linear(num_features, 2)
-#     resnet18.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-#     model = resnet18.to(device)
 
 class SimpleCNN(nn.Module):
     def __init__(self, input_channels=1, num_classes=2):
@@ -129,7 +122,7 @@ def plot_loss(epochs, train_losses, test_losses, fp = 'plot'):
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig(os.path.join(fp, "Loss_Curves_controlled.png"))
+    plt.savefig(os.path.join(fp, "Loss_Curves_controlled_GradCAM1.png"))
     plt.clf()
 
 
@@ -141,7 +134,7 @@ def plot_accuracy(epochs, train_acc, test_acc, fp = 'plot'):
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig(os.path.join(fp, "Accuracy_Curves_controlled.png"))
+    plt.savefig(os.path.join(fp, "Accuracy_Curves_controlled_GradCAM1.png"))
     plt.clf()
 
 
@@ -163,9 +156,7 @@ except:
    pass
 
 model = model.to('cpu')
-torch.save(model, r'models/model_controlled.pt')
-# model_scripted = torch.jit.script(model) # Export to TorchScript
-# model_scripted.save('models/model_scripted.pt') # Save
+torch.save(model, r'models/model_GradCAM1_controlled.pt')
 
 try:
     os.mkdir(r"plot")

@@ -28,14 +28,6 @@ test_loader = DataLoader(test_data, batch_size=64, shuffle=True)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-# try:
-#     model = torch.load(r'models/model.pth')
-# except:
-#     resnet18 = resnet18(pretrained=False)
-#     num_features = resnet18.fc.in_features
-#     resnet18.fc = nn.Linear(num_features, 2)
-#     resnet18.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-#     model = resnet18.to(device)
 
 class SimpleCNN(nn.Module):
     def __init__(self, input_channels=1, num_classes=2):
