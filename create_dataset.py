@@ -96,15 +96,19 @@ def create_dataset(df):
     
     return CustomDataset(dataset)
 
-def create_dataset_old(df):
+def create_dataset_controlled(df, idxes):
     dataset = []
+    df = ratios_dataframe(df)
     logging.info('Creating dataset...')
     for index, data in tqdm(df.iterrows(), total=df.shape[0]):
         status_label = data['status_label']
-        data = data.loc['X1':'X18']
+        data = data.drop(columns=['status_label'])
         data = data.to_numpy()
-        data = array_to_image(data)
-        data = rearrange_image(data)
+        zeros_to_add = max(0, 169 - len(data))
+        data = np.pad(data, (0, zeros_to_add), mode='constant', constant_values=0).reshape(13, 13)
+        idx = idxes[0] if status_label == 0 else idxes[1]
+        data[idx[:, 0], idx[:, 1]] = 0
+        # data = rearrange_image(data)
         data = enlarge_image(data)
         data = torch.Tensor(data)
         data = data.unsqueeze(0)
