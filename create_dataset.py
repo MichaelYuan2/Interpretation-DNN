@@ -99,7 +99,6 @@ def create_dataset(df, oversampling = False):
 
 def create_dataset_controlled(df, idxes, oversampling = False):
     dataset = []
-    flag = True
     if oversampling:
         df = oversampling_data(df)
     df = ratios_dataframe(df)
@@ -112,9 +111,6 @@ def create_dataset_controlled(df, idxes, oversampling = False):
         data = np.pad(data, (0, zeros_to_add), mode='constant', constant_values=0).reshape(13, 13)
         idx = idxes[0] #if status_label == 0 else idxes[1]
         data[idx[:, 0], idx[:, 1]] = 0
-        if flag:
-            print(data)
-            flag = False
         # data = rearrange_image(data)
         data = enlarge_image(data)
         data = torch.Tensor(data)

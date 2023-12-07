@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
 import pandas as pd
 import numpy as np
 from create_dataset import *
@@ -25,8 +26,10 @@ data = load_data(DATAPATH)
 idxes = [np.random.randint(0, 13, size=(10, 2)), np.random.randint(0, 13, size=(10, 2))]
 print(idxes[0])
 
-dataset = create_dataset_controlled(data, idxes)
-train_data, test_data = train_test_split(dataset, test_size=0.2, random_state=42)
+X, y = data.drop(columns=['status_label']), data['status_label']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+train_df, test_df = pd.concat([X_train, y_train], axis=1), pd.concat([X_test, y_test], axis=1)
+train_data, test_data = create_dataset_controlled(train_df, idxes, oversampling=True), create_dataset_controlled(test_df, idxes, oversampling=False)
 train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
 test_loader = DataLoader(test_data, batch_size=64, shuffle=True)
 
@@ -95,19 +98,23 @@ def test(model, device, test_loader):
     model.eval()
     test_loss = 0
     correct = 0
+    y_targs, y_preds = [], []
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), torch.tensor(target).type(torch.LongTensor).to(device)
             output = model(data)
             test_loss += F.cross_entropy(output, target, reduction='sum').item() 
-            pred = output.max(1, keepdim=True)[1] 
+            pred = output.max(1, keepdim=True)[1]
             correct += pred.eq(target.view_as(pred)).sum().item()
+            y_targs.extend(target.to('cpu').numpy())
+            y_preds.extend(pred.to('cpu').numpy().squeeze())
 
     test_loss /= len(test_loader.dataset)
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
-    return (test_loss, correct / len(test_loader.dataset))
+
+    return test_loss, correct / len(test_loader.dataset), y_targs, y_preds
 
 def plot_loss(epochs, train_losses, test_losses, fp = 'plot'):
     plt.plot(range(epochs), train_losses, label='Train')
@@ -141,11 +148,16 @@ train_acc = []
 test_acc = []
 for epoch in range(1, epochs + 1):
     train_loss, train_accuracy = train(model, device, train_loader, optimizer, epoch)
-    test_loss, test_accuracy = test(model, device, test_loader)
+    test_loss, test_accuracy, y_targs, y_preds = test(model, device, test_loader)
     train_losses.append(train_loss)
     test_losses.append(test_loss)
     train_acc.append(train_accuracy)
     test_acc.append(test_accuracy)
+
+# y_targs, y_preds = y_targs.to('cpu'), y_preds.to('cpu')
+labels = [0, 1]
+print(classification_report(y_targs, y_preds, labels=labels))
+print(confusion_matrix(y_targs, y_preds))
 
 try:
     os.mkdir(r"models")

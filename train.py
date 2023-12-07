@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
 import pandas as pd
 import numpy as np
 from create_dataset import *
@@ -11,7 +12,6 @@ from tqdm import tqdm
 from PIL import Image
 import logging
 import torch.nn.functional as F
-from torchvision.models import resnet18
 import matplotlib.pyplot as plt
 
 # image data path
@@ -95,19 +95,23 @@ def test(model, device, test_loader):
     model.eval()
     test_loss = 0
     correct = 0
+    y_targs, y_preds = [], []
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), torch.tensor(target).type(torch.LongTensor).to(device)
             output = model(data)
             test_loss += F.cross_entropy(output, target, reduction='sum').item() 
-            pred = output.max(1, keepdim=True)[1] 
+            pred = output.max(1, keepdim=True)[1]
             correct += pred.eq(target.view_as(pred)).sum().item()
+            y_targs.extend(target.to('cpu').numpy())
+            y_preds.extend(pred.to('cpu').numpy().squeeze())
 
     test_loss /= len(test_loader.dataset)
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
-    return (test_loss, correct / len(test_loader.dataset))
+
+    return test_loss, correct / len(test_loader.dataset), y_targs, y_preds
 
 def plot_loss(epochs, train_losses, test_losses, fp = 'plot'):
     plt.plot(range(epochs), train_losses, label='Train')
@@ -119,7 +123,7 @@ def plot_loss(epochs, train_losses, test_losses, fp = 'plot'):
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig(os.path.join(fp, "Loss_Curves2.png"))
+    plt.savefig(os.path.join(fp, "Loss_Curves.png"))
     plt.clf()
 
 
@@ -131,7 +135,7 @@ def plot_accuracy(epochs, train_acc, test_acc, fp = 'plot'):
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig(os.path.join(fp, "Accuracy_Curves2.png"))
+    plt.savefig(os.path.join(fp, "Accuracy_Curves.png"))
     plt.clf()
 
 
@@ -141,11 +145,16 @@ train_acc = []
 test_acc = []
 for epoch in range(1, epochs + 1):
     train_loss, train_accuracy = train(model, device, train_loader, optimizer, epoch)
-    test_loss, test_accuracy = test(model, device, test_loader)
+    test_loss, test_accuracy, y_targs, y_preds = test(model, device, test_loader)
     train_losses.append(train_loss)
     test_losses.append(test_loss)
     train_acc.append(train_accuracy)
     test_acc.append(test_accuracy)
+
+# y_targs, y_preds = y_targs.to('cpu'), y_preds.to('cpu')
+labels = [0, 1]
+print(classification_report(y_targs, y_preds, labels=labels))
+print(confusion_matrix(y_targs, y_preds))
 
 try:
     os.mkdir(r"models")
